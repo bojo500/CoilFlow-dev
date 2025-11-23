@@ -43,16 +43,9 @@ services:
     ports:
       - "3001:3001"  # Backend exposed on host port 3001
     depends_on:
-      mysql:
-        condition: service_healthy
+      - coilflow_mysql
     networks:
       - coilflow_network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "cf1.mk-codes.com/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   # Frontend Service (React/Vite with Nginx)
   frontend:
