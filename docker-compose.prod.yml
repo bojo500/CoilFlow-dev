@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # 1. MySQL Database Service
   coilflow_mysql:
     image: mysql:8.0
     container_name: coilflow_mysql
@@ -16,12 +17,6 @@ services:
       - coilflow_mysql_data:/var/lib/mysql
     networks:
       - coilflow_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
     command: --default-authentication-plugin=mysql_native_password
 
   # 2. Backend Service
@@ -77,8 +72,7 @@ services:
     ports:
       - "8090:80"
     depends_on:
-      coilflow_mysql:
-        condition: service_healthy
+      - coilflow_mysql
     networks:
       - coilflow_network
 
