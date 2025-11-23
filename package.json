@@ -1,5 +1,9 @@
 {
   "devDependencies": {
+    "@types/play-sound": "^1.1.2",
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "play-sound": "^1.1.6"
   }
 }
