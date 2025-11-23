@@ -1,8 +1,7 @@
 version: '3.8'
 
 services:
-  # MySQL Database Service
-  mysql:
+  coilflow_mysql:
     image: mysql:8.0
     container_name: coilflow_mysql
     restart: unless-stopped
@@ -12,7 +11,7 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3307:3306"  # Host:Container - Avoids conflict with existing 3306
+      - "3307:3306"
     volumes:
       - coilflow_mysql_data:/var/lib/mysql
     networks:
@@ -22,10 +21,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     command: --default-authentication-plugin=mysql_native_password
 
-  # Backend Service (Node.js/NestJS)
+  # 2. Backend Service
   backend:
     build:
       context: ./backend
@@ -34,20 +33,20 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DB_HOST: coilflow_mysql  # Internal service name
-      DB_PORT: 3306            # Internal MySQL port (NOT 3307)
+      DB_HOST: coilflow_mysql
+      DB_PORT: 3306
       DB_USERNAME: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_DATABASE: ${DB_NAME}
       PORT: 3001
     ports:
-      - "3001:3001"  # Backend exposed on host port 3001
+      - "3001:3001"
     depends_on:
       - coilflow_mysql
     networks:
       - coilflow_network
 
-  # Frontend Service (React/Vite with Nginx)
+  # 3. Frontend Service
   frontend:
     build:
       context: ./frontend
@@ -55,41 +54,39 @@ services:
     container_name: coilflow_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: cf1.mk-codes.com  # Points to backend on host
+      VITE_API_URL: http://cf1.mk-codes.com:3001
     ports:
-      - "8082:80"  # Frontend exposed on host port 8082 (avoids 3000, 8080, 8081)
+      - "8082:80"
     depends_on:
       - backend
     networks:
       - coilflow_network
 
-  # phpMyAdmin - Database Management UI
+  # 4. phpMyAdmin Service
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: coilflow_phpmyadmin
     restart: unless-stopped
     environment:
-      PMA_HOST: coilflow_mysql  # Internal service name
-      PMA_PORT: 3306            # Internal MySQL port
+      PMA_HOST: coilflow_mysql
+      PMA_PORT: 3306
       PMA_USER: ${DB_USER}
       PMA_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       UPLOAD_LIMIT: 100M
     ports:
-      - "8090:80"  # phpMyAdmin exposed on host port 8090 (avoids 8080, 8081)
+      - "8090:80"
     depends_on:
-      mysql:
+      coilflow_mysql:
         condition: service_healthy
     networks:
       - coilflow_network
 
-# Named volume for MySQL data persistence
 volumes:
   coilflow_mysql_data:
     name: coilflow_mysql_data
     driver: local
 
-# Dedicated internal network for CoilFlow services
 networks:
   coilflow_network:
     name: coilflow_network
