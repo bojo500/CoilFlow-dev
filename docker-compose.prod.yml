@@ -7,10 +7,10 @@ services:
     container_name: coilflow_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: coilflow_db
+      MYSQL_USER: coilflow_user
+      MYSQL_PASSWORD: password
     ports:
       - "3307:3306"
     volumes:
