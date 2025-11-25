@@ -2,22 +2,19 @@ version: '3.8'
 
 services:
   # 1. MySQL Database Service
-  coilflow_mysql:
+  mysql:
     image: mysql:8.0
     container_name: coilflow_mysql
-    restart: unless-stopped
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: coilflow_db
-      MYSQL_USER: coilflow_user
-      MYSQL_PASSWORD: password
     ports:
-      - "3306"
+      - "3306:3306"
     volumes:
       - coilflow_mysql_data:/var/lib/mysql
     networks:
       - coilflow_network
-    command: --default-authentication-plugin=mysql_native_password
 
   # 2. Backend Service
   backend:
@@ -28,19 +25,20 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DB_HOST: coilflow_mysql
-      DB_PORT: 3306
-      DB_USERNAME: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_DATABASE: ${DB_NAME}
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      DATABASE_NAME: coilflow
       PORT: 3001
+      CORS_ORIGINS: http://162.120.17.173:8082,http://162.120.17.173,http://localhost:3001
     ports:
       - "3001:3001"
     depends_on:
-      - coilflow_mysql
+      - mysql
     networks:
       - coilflow_network
-
+      -
   # 3. Frontend Service
   frontend:
     build:
@@ -61,25 +59,21 @@ services:
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: coilflow_phpmyadmin
-    restart: unless-stopped
+    restart: always
     environment:
-      PMA_HOST: coilflow_mysql
+      PMA_HOST: mysql
       PMA_PORT: 3306
-      PMA_USER: ${DB_USER}
-      PMA_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      UPLOAD_LIMIT: 100M
+      PMA_USER: root
+      PMA_PASSWORD: root
     ports:
       - "8090:80"
     depends_on:
-      - coilflow_mysql
+      - mysql
     networks:
       - coilflow_network
 
 volumes:
-  coilflow_mysql_data:
-    name: coilflow_mysql_data
-    driver: local
+  mysql_data:
 
 networks:
   coilflow_network:

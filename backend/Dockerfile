@@ -1,17 +1,22 @@
 FROM node:18-alpine
 
+
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
 
+# Install dependencies
 RUN npm install
 
-COPY src ./src
+# Copy source code
+COPY . .
 
+# Build the application
 RUN npm run build
 
-EXPOSE 3001
+# Expose port
+EXPOSE 3000
 
-CMD ["node", "dist/main.js"]
+# Start the application
+CMD sh -c "echo 'Waiting for database...' && echo 'Starting application...' && npm run start:prod"
