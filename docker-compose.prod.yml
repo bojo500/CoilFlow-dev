@@ -12,7 +12,7 @@ services:
       MYSQL_USER: coilflow_user
       MYSQL_PASSWORD: password
     ports:
-      - "3307:3306"
+      - "3306"
     volumes:
       - coilflow_mysql_data:/var/lib/mysql
     networks:
