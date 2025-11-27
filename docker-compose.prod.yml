@@ -31,14 +31,13 @@ services:
       DATABASE_PASSWORD: root
       DATABASE_NAME: coilflow
       PORT: 3001
-      CORS_ORIGINS: http://162.120.17.173:8082,http://162.120.17.173,http://localhost:3001
+      CORS_ORIGINS: http://162.120.17.173:8082,http://162.120.17.173,http://cf1.mk-codes.com:3001,http://localhost:3001
     ports:
       - "3001:3001"
     depends_on:
       - mysql
     networks:
       - coilflow_network
-      -
   # 3. Frontend Service
   frontend:
     build:
@@ -54,7 +53,6 @@ services:
       - backend
     networks:
       - coilflow_network
-
   # 4. phpMyAdmin Service
   phpmyadmin:
     image: phpmyadmin:latest
@@ -71,7 +69,6 @@ services:
       - mysql
     networks:
       - coilflow_network
-
 volumes:
   mysql_data:
 
