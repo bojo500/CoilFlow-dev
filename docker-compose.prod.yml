@@ -70,7 +70,9 @@ services:
     networks:
       - coilflow_network
 volumes:
-  mysql_data:
+  coilflow_mysql_data:
+    name: coilflow_mysql_data
+    driver: local
 
 networks:
   coilflow_network:
