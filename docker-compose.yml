@@ -87,8 +87,7 @@ services:
     ports:
       - "8090:80"  # phpMyAdmin on port 8090 (avoids conflict with your existing 8080)
     depends_on:
-      mysql:
-        condition: service_healthy
+    - mysql
     networks:
       - coilflow_network
 
