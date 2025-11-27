@@ -1,22 +1,31 @@
 version: '3.8'
 
 services:
-  # 1. MySQL Database Service
+  # MySQL Database Service
   mysql:
     image: mysql:8.0
     container_name: coilflow_mysql
-    restart: always
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: coilflow_db
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3307:3306"
+      - "3307:3306"  # Host:Container - Avoids conflict with existing MySQL on 3306
     volumes:
       - coilflow_mysql_data:/var/lib/mysql
     networks:
       - coilflow_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: --default-authentication-plugin=mysql_native_password
 
-  # 2. Backend Service
+  # Backend Service (Node.js/NestJS)
   backend:
     build:
       context: ./backend
@@ -24,21 +33,28 @@ services:
     container_name: coilflow_backend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      DATABASE_HOST: mysql
-      DATABASE_PORT: 3306
-      DATABASE_USER: root
-      DATABASE_PASSWORD: root
-      DATABASE_NAME: coilflow
-      PORT: 3001
-      CORS_ORIGINS: http://162.120.17.173:8082,http://162.120.17.173,http://cf1.mk-codes.com:3001,http://localhost:3001
+      NODE_ENV: ${NODE_ENV}
+      DB_HOST: coilflow_mysql  # Internal service name
+      DB_PORT: 3306            # Internal MySQL port (NOT 3307)
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_NAME}
+      PORT: ${PORT}
     ports:
-      - "3001:3001"
+      - "3001:3001"  # Backend exposed on host port 3001
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - coilflow_network
-  # 3. Frontend Service
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Service (React/Vite with Nginx)
   frontend:
     build:
       context: ./frontend
@@ -46,27 +62,31 @@ services:
     container_name: coilflow_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://cf1.mk-codes.com:3001
+      VITE_API_URL: ${VITE_API_URL}
     ports:
-      - "8082:80"
+      - "5000:80"  # Frontend exposed on host port 5000 (avoids 3000, 8080)
     depends_on:
       - backend
     networks:
       - coilflow_network
-  # 4. phpMyAdmin Service
+
+  # phpMyAdmin - Database Management UI
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: coilflow_phpmyadmin
-    restart: always
+    restart: unless-stopped
     environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: root
+      PMA_HOST: coilflow_mysql  # Internal service name
+      PMA_PORT: 3306            # Internal MySQL port
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      UPLOAD_LIMIT: 100M
     ports:
-      - "8090:80"
+      - "8090:80"  # phpMyAdmin exposed on host port 8090 (avoids 8080)
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - coilflow_network
 volumes:
