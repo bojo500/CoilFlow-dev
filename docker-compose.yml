@@ -17,14 +17,6 @@ services:
       - coilflow_mysql_data:/var/lib/mysql
     networks:
       - coilflow_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    command: --default-authentication-plugin=mysql_native_password
-
   # Backend Service (Node.js/NestJS)
   backend:
     build:
@@ -43,19 +35,11 @@ services:
     ports:
       - "3001:3001"  # Backend on port 3001
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
     networks:
       - coilflow_network
     volumes:
       - ./backend/src:/app/src  # Hot reload for development
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
   # Frontend Service (React/Vite)
   frontend:
     build:
@@ -90,7 +74,6 @@ services:
     - mysql
     networks:
       - coilflow_network
-
 # Named volume for MySQL data persistence
 volumes:
   coilflow_mysql_data:
